@@ -1,6 +1,6 @@
 /*
   MQTT Discovery and MQTT JSON Light for Home Assistant
-  
+
   Samuel Mertenat
   04.2017
 */
@@ -95,6 +95,7 @@ void setupWiFi() {
   delay(10);
 
   WiFi.mode(WIFI_STA);
+  WiFi.hostname(WIFI_HOSTNAME);
   WiFi.onEvent(handleWiFiEvent);
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
 
@@ -167,7 +168,6 @@ void handleOTA() {
 //   MQTT
 ///////////////////////////////////////////////////////////////////////////
 
-char MQTT_CLIENT_ID[7] = {0};
 #if defined(MQTT_HOME_ASSISTANT_SUPPORT)
 char MQTT_CONFIG_TOPIC[sizeof(MQTT_HOME_ASSISTANT_DISCOVERY_PREFIX) + sizeof(MQTT_CLIENT_ID) + sizeof(MQTT_CONFIG_TOPIC_TEMPLATE) - 4] = {0};
 #else
@@ -197,26 +197,26 @@ void handleMQTTMessage(char* p_topic, byte* p_payload, unsigned int p_length) {
   DEBUG_PRINTLN(p_topic);
   DEBUG_PRINT(F("INFO: MQTT payload: "));
   DEBUG_PRINTLN(payload);
-  
+
   if (String(MQTT_COMMAND_TOPIC).equals(p_topic)) {
-    DynamicJsonDocument dynamicJsonBuffer;
-    JsonObject& root = dynamicJsonBuffer.parseObject(p_payload);
-    if (!root.success()) {
-      DEBUG_PRINTLN(F("ERROR: parseObject() failed"));
+    DynamicJsonDocument dynamicJsonBuffer(256);
+    auto error = deserializeJson(dynamicJsonBuffer, p_payload);
+    if (error) {
+      DEBUG_PRINTLN(F("ERROR: deserializeJson() failed"));
       return;
     }
 
-    if (root.containsKey("state")) {
-      if (strcmp(root["state"], MQTT_STATE_ON_PAYLOAD) == 0) {
+    if (dynamicJsonBuffer.containsKey("state")) {
+      if (strcmp(dynamicJsonBuffer["state"], MQTT_STATE_ON_PAYLOAD) == 0) {
         if (bulb.setState(true)) {
           DEBUG_PRINT(F("INFO: State changed to: "));
           DEBUG_PRINTLN(bulb.getState());
           cmd = CMD_STATE_CHANGED;
         }
-      } else if (strcmp(root["state"], MQTT_STATE_OFF_PAYLOAD) == 0) {
+      } else if (strcmp(dynamicJsonBuffer["state"], MQTT_STATE_OFF_PAYLOAD) == 0) {
         // stops the possible current effect
         bulb.setEffect(EFFECT_NOT_DEFINED_NAME);
-        
+
         if (bulb.setState(false)) {
           DEBUG_PRINT(F("INFO: State changed to: "));
           DEBUG_PRINTLN(bulb.getState());
@@ -224,14 +224,14 @@ void handleMQTTMessage(char* p_topic, byte* p_payload, unsigned int p_length) {
         }
       }
     }
-    
-    if (root.containsKey("color")) {
+
+    if (dynamicJsonBuffer.containsKey("color")) {
       // stops the possible current effect
       bulb.setEffect(EFFECT_NOT_DEFINED_NAME);
-      
-      uint8_t r = root["color"]["r"];
-      uint8_t g = root["color"]["g"];
-      uint8_t b = root["color"]["b"];
+
+      uint8_t r = dynamicJsonBuffer["color"]["r"];
+      uint8_t g = dynamicJsonBuffer["color"]["g"];
+      uint8_t b = dynamicJsonBuffer["color"]["b"];
 
       if (bulb.setColor(r, g, b)) {
         DEBUG_PRINT(F("INFO: Color changed to: "));
@@ -244,38 +244,38 @@ void handleMQTTMessage(char* p_topic, byte* p_payload, unsigned int p_length) {
       }
     }
 
-    if (root.containsKey("brightness")) {
-      if (bulb.setBrightness(root["brightness"])) {
+    if (dynamicJsonBuffer.containsKey("brightness")) {
+      if (bulb.setBrightness(dynamicJsonBuffer["brightness"])) {
         DEBUG_PRINT(F("INFO: Brightness changed to: "));
         DEBUG_PRINTLN(bulb.getBrightness());
         cmd = CMD_STATE_CHANGED;
       }
     }
 
-    if (root.containsKey("white_value")) {
+    if (dynamicJsonBuffer.containsKey("white_value")) {
       // stops the possible current effect
       bulb.setEffect(EFFECT_NOT_DEFINED_NAME);
-      
-      if (bulb.setWhite(root["white_value"])) {
+
+      if (bulb.setWhite(dynamicJsonBuffer["white_value"])) {
         DEBUG_PRINT(F("INFO: White changed to: "));
         DEBUG_PRINTLN(bulb.getColor().white);
         cmd = CMD_STATE_CHANGED;
       }
     }
 
-    if (root.containsKey("color_temp")) {
+    if (dynamicJsonBuffer.containsKey("color_temp")) {
       // stops the possible current effect
       bulb.setEffect(EFFECT_NOT_DEFINED_NAME);
-      
-      if (bulb.setColorTemperature(root["color_temp"])) {
+
+      if (bulb.setColorTemperature(dynamicJsonBuffer["color_temp"])) {
         DEBUG_PRINT(F("INFO: Color temperature changed to: "));
         DEBUG_PRINTLN(bulb.getColorTemperature());
         cmd = CMD_STATE_CHANGED;
       }
     }
-    
-    if (root.containsKey("effect")) {
-      const char* effect = root["effect"];
+
+    if (dynamicJsonBuffer.containsKey("effect")) {
+      const char* effect = dynamicJsonBuffer["effect"];
       if (bulb.setEffect(effect)) {
         DEBUG_PRINTLN(F("INFO: Effect started"));
         cmd = CMD_NOT_DEFINED;
@@ -326,18 +326,17 @@ void connectToMQTT() {
 
 #if defined(MQTT_HOME_ASSISTANT_SUPPORT)
         // MQTT discovery for Home Assistant
-        JsonObject& root = staticJsonBuffer.createObject();
-        root["name"] = FRIENDLY_NAME;
-        root["platform"] = "mqtt_json";
-        root["state_topic"] = MQTT_STATE_TOPIC;
-        root["command_topic"] = MQTT_COMMAND_TOPIC;
-        root["brightness"] = true;
-        root["rgb"] = true;
-        root["white_value"] = true;
-        root["color_temp"] = true;
-        root["effect"] = true;
-        root["effect_list"] = EFFECT_LIST;
-        root.printTo(jsonBuffer, sizeof(jsonBuffer));
+        staticJsonBuffer["name"] = FRIENDLY_NAME;
+        staticJsonBuffer["platform"] = "mqtt_json";
+        staticJsonBuffer["state_topic"] = MQTT_STATE_TOPIC;
+        staticJsonBuffer["command_topic"] = MQTT_COMMAND_TOPIC;
+        staticJsonBuffer["brightness"] = true;
+        staticJsonBuffer["rgb"] = true;
+        staticJsonBuffer["white_value"] = true;
+        staticJsonBuffer["color_temp"] = true;
+        staticJsonBuffer["effect"] = true;
+        staticJsonBuffer["effect_list"] = EFFECT_LIST;
+        serializeJson(staticJsonBuffer, jsonBuffer);
         publishToMQTT(MQTT_CONFIG_TOPIC, jsonBuffer);
 #endif
 
@@ -366,17 +365,16 @@ void handleCMD() {
       break;
     case CMD_STATE_CHANGED:
       cmd = CMD_NOT_DEFINED;
-      DynamicJsonDocument dynamicJsonBuffer;
-      JsonObject& root = dynamicJsonBuffer.createObject();
-      root["state"] = bulb.getState() ? MQTT_STATE_ON_PAYLOAD : MQTT_STATE_OFF_PAYLOAD;
-      root["brightness"] = bulb.getBrightness();
-      JsonObject& color = root.createNestedObject("color");
+      DynamicJsonDocument dynamicJsonBuffer(256);
+      dynamicJsonBuffer["state"] = bulb.getState() ? MQTT_STATE_ON_PAYLOAD : MQTT_STATE_OFF_PAYLOAD;
+      dynamicJsonBuffer["brightness"] = bulb.getBrightness();
+      JsonObject color = dynamicJsonBuffer.createNestedObject("color");
       color["r"] = bulb.getColor().red;
       color["g"] = bulb.getColor().green;
       color["b"] = bulb.getColor().blue;
-      root["white_value"] = bulb.getColor().white;
-      root["color_temp"] = bulb.getColorTemperature();
-      root.printTo(jsonBuffer, sizeof(jsonBuffer));
+      dynamicJsonBuffer["white_value"] = bulb.getColor().white;
+      dynamicJsonBuffer["color_temp"] = bulb.getColorTemperature();
+      serializeJson(dynamicJsonBuffer, jsonBuffer);
       publishToMQTT(MQTT_STATE_TOPIC, jsonBuffer);
       break;
   }
@@ -395,8 +393,6 @@ void setup() {
 #endif
 
   setupWiFi();
-
-  sprintf(MQTT_CLIENT_ID, "%06X", ESP.getChipId());
 #if defined(MQTT_HOME_ASSISTANT_SUPPORT)
   sprintf(MQTT_CONFIG_TOPIC, MQTT_CONFIG_TOPIC_TEMPLATE, MQTT_HOME_ASSISTANT_DISCOVERY_PREFIX, MQTT_CLIENT_ID);
   DEBUG_PRINT(F("INFO: MQTT config topic: "));
