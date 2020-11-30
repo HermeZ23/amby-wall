@@ -9,7 +9,7 @@
 #include <PubSubClient.h>         // https://github.com/knolleary/pubsubclient
 #include <ArduinoJson.h>          // https://github.com/bblanchon/ArduinoJson
 #include <ArduinoOTA.h>
-#include "ha_mqtt_rgbw_light_with_discovery.h"
+#include "amby-wall.h"
 
 #if defined(DEBUG_TELNET)
 WiFiServer  telnetServer(23);
@@ -25,7 +25,7 @@ WiFiClient  telnetClient;
 #endif
 
 #if defined(MQTT_HOME_ASSISTANT_SUPPORT)
-StaticJsonBuffer<256> staticJsonBuffer;
+StaticJsonDocument<256> staticJsonBuffer;
 char jsonBuffer[256] = {0};
 #endif
 
@@ -199,7 +199,7 @@ void handleMQTTMessage(char* p_topic, byte* p_payload, unsigned int p_length) {
   DEBUG_PRINTLN(payload);
   
   if (String(MQTT_COMMAND_TOPIC).equals(p_topic)) {
-    DynamicJsonBuffer dynamicJsonBuffer;
+    DynamicJsonDocument dynamicJsonBuffer;
     JsonObject& root = dynamicJsonBuffer.parseObject(p_payload);
     if (!root.success()) {
       DEBUG_PRINTLN(F("ERROR: parseObject() failed"));
@@ -366,7 +366,7 @@ void handleCMD() {
       break;
     case CMD_STATE_CHANGED:
       cmd = CMD_NOT_DEFINED;
-      DynamicJsonBuffer dynamicJsonBuffer;
+      DynamicJsonDocument dynamicJsonBuffer;
       JsonObject& root = dynamicJsonBuffer.createObject();
       root["state"] = bulb.getState() ? MQTT_STATE_ON_PAYLOAD : MQTT_STATE_OFF_PAYLOAD;
       root["brightness"] = bulb.getBrightness();

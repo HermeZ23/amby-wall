@@ -4,6 +4,7 @@
 
 #include <ESP8266WiFi.h>          // https://github.com/esp8266/Arduino
 #include "config.h"
+#include <FastLED.h>
 
 #define COLOR_TEMP_HA_MIN_IN_MIRED   154    // Home Assistant minimum color temperature
 #define COLOR_TEMP_HA_MAX_IN_MIRED   500    // Home Assistant maximum color temperature

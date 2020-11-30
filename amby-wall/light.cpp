@@ -8,7 +8,7 @@ volatile uint8_t effect = EFFECT_NOT_DEFINED;
 AIRGBWBulb::AIRGBWBulb(void) {
   analogWriteRange(255);
 
-  FastLED.addLeds<WS2801, DATA_PIN, CLOCK_PIN, BGR>(leds, NUM_LEDS);
+  FastLED.addLeds<WS2801, DATA_P, CLOCK_P, BGR>(leds, NUM_LEDS);
 }
 
 void AIRGBWBulb::init(void) {
@@ -53,10 +53,7 @@ bool AIRGBWBulb::setState(bool p_state) {
     setColor();
   } else {
     m_state = false;
-    analogWrite(RED_PIN, 0);
-    analogWrite(GREEN_PIN, 0);
-    analogWrite(BLUE_PIN, 0);
-    analogWrite(WHITE_PIN, 0);
+
   }
 
   return true;
@@ -107,10 +104,6 @@ bool AIRGBWBulb::setColor(uint8_t p_red, uint8_t p_green, uint8_t p_blue) {
 
 bool AIRGBWBulb::setColor() {
   // sets the new color
-  analogWrite(RED_PIN, map(m_color.red, 0, 255, 0, m_brightness));
-  analogWrite(GREEN_PIN, map(m_color.green, 0, 255, 0, m_brightness));
-  analogWrite(BLUE_PIN, map(m_color.blue, 0, 255, 0, m_brightness));
-  analogWrite(WHITE_PIN, m_color.white);
 
   return true;
 }
@@ -133,10 +126,6 @@ bool AIRGBWBulb::setWhite(uint8_t p_white) {
   m_color.blue = 0;
 
   // adjusts the white value
-  analogWrite(RED_PIN, m_color.red);
-  analogWrite(GREEN_PIN, m_color.green);
-  analogWrite(BLUE_PIN, m_color.blue);
-  analogWrite(WHITE_PIN, m_color.white);
 
   return true;
 }
