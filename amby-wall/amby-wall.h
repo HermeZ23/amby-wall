@@ -62,6 +62,8 @@ class AIRGBWBulb {
     Color     m_color;
     uint16_t  m_colorTemperature;
     
+    CRGB      leds[NUM_LEDS];
+    
     bool      setColor();
 
     void      rainbowEffect(uint8_t p_index);

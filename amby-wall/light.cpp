@@ -8,10 +8,7 @@ volatile uint8_t effect = EFFECT_NOT_DEFINED;
 AIRGBWBulb::AIRGBWBulb(void) {
   analogWriteRange(255);
 
-  pinMode(RED_PIN, OUTPUT);
-  pinMode(GREEN_PIN, OUTPUT);
-  pinMode(BLUE_PIN, OUTPUT);
-  pinMode(WHITE_PIN, OUTPUT);
+  FastLED.addLeds<WS2801, DATA_PIN, CLOCK_PIN, BGR>(leds, NUM_LEDS);
 }
 
 void AIRGBWBulb::init(void) {
