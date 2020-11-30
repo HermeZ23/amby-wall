@@ -1,4 +1,4 @@
-#include "ha_mqtt_rgbw_light_with_discovery.h"
+#include "amby-wall.h"
 
 volatile uint8_t effect = EFFECT_NOT_DEFINED;
 
@@ -8,10 +8,10 @@ volatile uint8_t effect = EFFECT_NOT_DEFINED;
 AIRGBWBulb::AIRGBWBulb(void) {
   analogWriteRange(255);
 
-  pinMode(RED_PIN, OUTPUT);  
-  pinMode(GREEN_PIN, OUTPUT);  
-  pinMode(BLUE_PIN, OUTPUT);  
-  pinMode(WHITE_PIN, OUTPUT);  
+  pinMode(RED_PIN, OUTPUT);
+  pinMode(GREEN_PIN, OUTPUT);
+  pinMode(BLUE_PIN, OUTPUT);
+  pinMode(WHITE_PIN, OUTPUT);
 }
 
 void AIRGBWBulb::init(void) {
@@ -50,7 +50,7 @@ bool AIRGBWBulb::setState(bool p_state) {
   // checks if the given state is different from the actual state
   if (p_state == m_state)
     return false;
-  
+
   if (p_state) {
     m_state = true;
     setColor();
@@ -60,7 +60,7 @@ bool AIRGBWBulb::setState(bool p_state) {
     analogWrite(GREEN_PIN, 0);
     analogWrite(BLUE_PIN, 0);
     analogWrite(WHITE_PIN, 0);
-  } 
+  }
 
   return true;
 }
@@ -166,7 +166,7 @@ bool AIRGBWBulb::setColorTemperature(uint16_t p_colorTemperature) {
   // http://www.tannerhelland.com/4435/convert-temperature-rgb-algorithm-code/
   // M = 1000000 / T <> T [kelvin] = 1000000 / M [mired]
       int tmpKelvin = 1000000 / m_colorTemperature;
-  
+
       if (tmpKelvin < 1000) {
         tmpKelvin = 1000;
       } else if (tmpKelvin > 40000) {
@@ -232,7 +232,7 @@ bool AIRGBWBulb::setColorTemperature(uint16_t p_colorTemperature) {
       }
     }
   }
-  
+
   return setColor();
 }
 
