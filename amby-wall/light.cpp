@@ -8,7 +8,7 @@ volatile uint8_t effect = EFFECT_NOT_DEFINED;
 AIRGBWBulb::AIRGBWBulb(void) {
   analogWriteRange(255);
 
-  FastLED.addLeds<WS2801, DATA_P, CLOCK_P, BGR>(leds, NUM_LEDS);
+  FastLED.addLeds<WS2801, DATA_P, CLOCK_P, RGB>(leds, NUM_LEDS);
 }
 
 void AIRGBWBulb::init(void) {
@@ -53,7 +53,8 @@ bool AIRGBWBulb::setState(bool p_state) {
     setColor();
   } else {
     m_state = false;
-
+    FastLED.clear();
+    FastLED.show();
   }
 
   return true;
@@ -74,8 +75,7 @@ bool AIRGBWBulb::setBrightness(uint8_t p_brightness) {
   // saves the new brightness value
   m_brightness = p_brightness;
 
-  if (m_color.white != 0)
-    m_color.white = p_brightness;
+  FastLED.setBrightness(m_brightness);
 
   return setColor();
 }
@@ -103,7 +103,11 @@ bool AIRGBWBulb::setColor(uint8_t p_red, uint8_t p_green, uint8_t p_blue) {
 }
 
 bool AIRGBWBulb::setColor() {
-  // sets the new color
+  for (int i=0; i< NUM_LEDS; i++) {
+    leds[i] = CRGB(m_color.red, m_color.green, m_color.blue);
+  }
+  
+  FastLED.show();
 
   return true;
 }
